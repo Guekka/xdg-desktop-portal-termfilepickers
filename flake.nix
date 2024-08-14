@@ -2,45 +2,79 @@
   description = "A Nix-flake-based Rust development environment";
 
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    systems.url = "github:nix-systems/default";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
-  outputs = { self, nixpkgs, rust-overlay }:
-    let
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ rust-overlay.overlays.default self.overlays.default ];
-        };
-      });
-    in
-    {
-      overlays.default = final: prev: {
-        rustToolchain = final.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-      };
-
-      devShells = forEachSupportedSystem ({ pkgs }: {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            rustToolchain
-            openssl
-            pkg-config
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake {inherit inputs;} {
+      systems = import inputs.systems;
+      imports = [
+        inputs.treefmt-nix.flakeModule
+      ];
+      perSystem = {
+        config,
+        self',
+        pkgs,
+        lib,
+        system,
+        ...
+      }: let
+        cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
+        rust-toolchain = pkgs.symlinkJoin {
+          name = "rust-toolchain";
+          paths = with pkgs; [
             cargo-deny
             cargo-edit
             cargo-watch
             rust-analyzer
+            rustc
+            cargo
+            cargo-watch
+            rustPlatform.rustcSrc
           ];
+        };
 
-          env = {
-            # Required by rust-analyzer
-            RUST_SRC_PATH = "${pkgs.rustToolchain}/lib/rustlib/src/rust/library";
+        buildInputs = with pkgs; [openssl];
+        nativeBuildInputs = with pkgs; [rustPlatform.bindgenHook pkg-config];
+      in {
+        # Rust package
+        packages.default = pkgs.rustPlatform.buildRustPackage {
+          inherit (cargoToml.package) name version;
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+
+          RUST_BACKTRACE = "full";
+
+          buildInputs = buildInputs;
+          nativeBuildInputs = nativeBuildInputs;
+
+          postInstall = ''
+            mkdir -p $out/share/xdg-desktop-portal/portals
+            cp data/termfilepickers.portal $out/share/xdg-desktop-portal/portals/
+          '';
+        };
+
+        # Rust dev environment
+        devShells.default = pkgs.mkShell {
+          inputsFrom = [
+            config.treefmt.build.devShell
+          ];
+          RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
+
+          nativeBuildInputs = nativeBuildInputs;
+          packages = buildInputs ++ [rust-toolchain pkgs.clippy];
+        };
+
+        treefmt.config = {
+          projectRootFile = "flake.nix";
+          programs = {
+            alejandra.enable = true;
+            rustfmt.enable = true;
           };
         };
-      });
+      };
     };
 }
