@@ -1,10 +1,13 @@
-use std::{collections::HashMap, error::Error};
+use std::error::Error;
 
 use anyhow::Result;
+use file_chooser::FileChooser;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Registry};
 use tracing_tree::HierarchicalLayer;
-use zbus::{connection, interface, zvariant::OwnedValue};
+use zbus::connection;
+
+mod file_chooser;
 
 pub(crate) fn setup_tracing() -> Result<()> {
     let env_filter = EnvFilter::builder()
@@ -24,38 +27,11 @@ pub(crate) fn setup_tracing() -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Default)]
-struct Picker;
-
-#[interface(name = "org.freedesktop.impl.portal.FileChooser")]
-impl Picker {
-    #[tracing::instrument]
-    #[dbus_interface(out_args("response", "results"))]
-    async fn open_file(&self) -> (u32, HashMap<String, OwnedValue>) {
-        println!("open_file");
-        (666, HashMap::new())
-    }
-
-    #[tracing::instrument]
-    #[dbus_interface(out_args("response", "results"))]
-    async fn open_files(&self) -> (u32, HashMap<String, OwnedValue>) {
-        println!("open_files");
-        (0, HashMap::new())
-    }
-
-    #[tracing::instrument]
-    #[dbus_interface(out_args("response", "results"))]
-    async fn save_file(&self) -> (u32, HashMap<String, OwnedValue>) {
-        println!("save_file");
-        (0, HashMap::new())
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     setup_tracing()?;
 
-    let picker = Picker::default();
+    let picker = FileChooser::default();
 
     let _conn = connection::Builder::session()?
         .name("org.freedesktop.impl.portal.desktop.termfilepickers")?

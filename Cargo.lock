@@ -1247,6 +1247,7 @@ dependencies = [
  "anyhow",
  "log",
  "nix",
+ "serde",
  "tokio",
  "tracing",
  "tracing-subscriber",
