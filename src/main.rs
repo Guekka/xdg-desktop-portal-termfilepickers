@@ -13,6 +13,8 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 use tracing_tree::HierarchicalLayer;
 use zbus::connection;
 
+use crate::config::Config;
+
 pub(crate) fn setup_tracing() -> Result<()> {
     let env_filter = EnvFilter::builder()
         .with_default_directive(LevelFilter::INFO.into())
@@ -50,7 +52,10 @@ fn load_config(args: &Args) -> Result<config::Config> {
 
     let content = std::fs::read_to_string(&config_path).context("Failed to read config file")?;
 
-    toml::from_str(&content).map_err(Into::into)
+    toml::from_str(&content)
+        .context("Failed to parse config file")
+        .and_then(Config::validate)
+        .context("Failed to validate config")
 }
 
 #[tokio::main]
