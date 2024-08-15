@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let picker = FileChooser::new(runner);
 
     let _conn = connection::Builder::session()?
-        .name("org.freedesktop.impl.portal.desktop.termfilepickers")?
+        .name("org.freedesktop.impl.portal.desktop.termfilechooser")?
         .serve_at("/org/freedesktop/portal/desktop", picker)?
         .build()
         .await?;

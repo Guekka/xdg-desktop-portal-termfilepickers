@@ -72,10 +72,10 @@ pub struct OpenFileOptions {
 
 impl From<OpenFileOptions> for RunnerOpenFileOptions {
     fn from(options: OpenFileOptions) -> Self {
-        Self {
-            multiple: options.multiple.unwrap_or(false),
-            directory: options.directory.unwrap_or(false),
-        }
+        Self::new(
+            options.multiple.unwrap_or(false),
+            options.directory.unwrap_or(false),
+        )
     }
 }
 
@@ -95,11 +95,11 @@ pub struct SaveFileOptions {
 
 impl From<SaveFileOptions> for RunnerSaveFileOptions {
     fn from(options: SaveFileOptions) -> Self {
-        Self {
-            current_folder: options
+        Self::new(
+            options
                 .current_folder
                 .map(|folder| String::from_utf8_lossy(folder.as_slice()).into_owned()),
-        }
+        )
     }
 }
 
@@ -116,11 +116,11 @@ pub struct SaveFilesOptions {
 
 impl From<SaveFilesOptions> for RunnerSaveFilesOptions {
     fn from(options: SaveFilesOptions) -> Self {
-        Self {
-            current_folder: options
+        Self::new(
+            options
                 .current_folder
                 .map(|folder| String::from_utf8_lossy(folder.as_slice()).into_owned()),
-            files: options
+            options
                 .files
                 .map(|files| {
                     files
@@ -129,7 +129,7 @@ impl From<SaveFilesOptions> for RunnerSaveFilesOptions {
                         .collect()
                 })
                 .unwrap_or_default(),
-        }
+        )
     }
 }
 
