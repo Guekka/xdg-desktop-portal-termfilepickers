@@ -5,11 +5,15 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
+clap = { version = "4.5.15", features = ["derive"] }
 log = "0.4.22"
 nix = "0.29.0"
 serde = { version = "1.0.207", features = ["serde_derive"] }
+serde_json = "1.0.125"
 tokio = { version = "1.0", features = ["full"] }
+toml = "0.8.19"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tracing-tree = "0.4.0"
+xdg = "2.5.2"
 zbus = "4.4.0"
