@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use zbus::zvariant::{self};
 
 use crate::runner::{
@@ -17,7 +17,6 @@ const PORTAL_RESPONSE_OTHER: u32 = 2;
 #[zvariant(signature = "(ua{sv})")]
 enum PortalResponse<T: zvariant::Type + serde::Serialize> {
     Success(T),
-    #[allow(dead_code)]
     Cancelled,
     Other,
 }
@@ -93,12 +92,33 @@ pub struct SaveFileOptions {
     current_file: Option<Vec<u8>>,
 }
 
+fn get_recommended_filepath(options: &SaveFileOptions) -> String {
+    let current_folder = options
+        .current_folder
+        .as_ref()
+        .map(|folder| String::from_utf8_lossy(folder.as_slice()).into_owned())
+        .unwrap_or_else(|| {
+            std::env::current_dir()
+                .unwrap()
+                .to_string_lossy()
+                .into_owned()
+        });
+
+    let current_name = options.current_name.as_deref().unwrap_or("untitled");
+
+    let mut save_file_path = std::path::PathBuf::from(&current_folder).join(&current_name);
+    while save_file_path.exists() {
+        let new_name = format!("{}_", save_file_path.file_stem().unwrap().to_string_lossy());
+        save_file_path.set_file_name(new_name);
+    }
+
+    save_file_path.to_string_lossy().into_owned()
+}
+
 impl From<SaveFileOptions> for RunnerSaveFileOptions {
     fn from(options: SaveFileOptions) -> Self {
         Self {
-            current_folder: options
-                .current_folder
-                .map(|folder| String::from_utf8_lossy(folder.as_slice()).into_owned()),
+            recommended_path: get_recommended_filepath(&options),
         }
     }
 }
@@ -176,9 +196,19 @@ pub struct FileChooser {
     runner: Box<dyn Runner>,
 }
 
+const SAVE_FILE_TEMPLATE: &str = include_str!("../data/save_file_template.txt");
 impl FileChooser {
     pub fn new(runner: Box<dyn Runner>) -> Self {
         Self { runner }
+    }
+
+    fn write_save_file_template(save_file_path: &std::path::Path) -> Result<()> {
+        std::fs::write(save_file_path, SAVE_FILE_TEMPLATE).with_context(|| {
+            format!(
+                "Failed to write save file template to {}",
+                save_file_path.display()
+            )
+        })
     }
 }
 
@@ -207,6 +237,14 @@ impl FileChooser {
         title: &str,
         options: SaveFileOptions,
     ) -> PortalResponse<FileChooserResult> {
+        let options = RunnerSaveFileOptions::from(options);
+        let save_file_path = std::path::Path::new(&options.recommended_path);
+
+        if !Self::write_save_file_template(save_file_path).is_ok() {
+            tracing::error!("Failed to write save file template");
+            return PortalResponse::Other;
+        }
+
         self.runner
             .run_save_file(&RunnerSaveFileOptions::from(options))
             .into()
@@ -221,6 +259,7 @@ impl FileChooser {
         title: &str,
         options: SaveFilesOptions,
     ) -> PortalResponse<FileChooserResult> {
+        // TODO: is this enough?
         self.runner
             .run_save_files(&RunnerSaveFilesOptions::from(options))
             .into()

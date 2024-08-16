@@ -21,7 +21,7 @@ pub struct RunnerOpenFileOptions {
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct RunnerSaveFileOptions {
-    pub current_folder: Option<String>,
+    pub recommended_path: String,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -110,15 +110,13 @@ impl ConfigRunner {
             anyhow::bail!("Runner failed: {:?}", out);
         }
 
-        Self::parse_result(&options.out_file)
-            .with_context(|| {
-                format!(
-                    "Script did not produce a valid output file: {}.\n
+        Self::parse_result(&options.out_file).with_context(|| {
+            format!(
+                "Script did not produce a valid output file: {}.\n
                      Script standard output was: {:?}",
-                    options.out_file,
-                    out
-                )
-            })
+                options.out_file, out
+            )
+        })
     }
 }
 
