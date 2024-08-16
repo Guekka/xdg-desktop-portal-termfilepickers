@@ -1,0 +1,20 @@
+xdg-desktop-portal-termfilechooser saving files tutorial
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!                 === WARNING! ===                 !!!
+!!! The contents of *whatever* file you open last in !!!
+!!! file manager will be *overwritten*!              !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Instructions:
+1) Move this file wherever you want.
+2) Rename the file if needed.
+3) Confirm your selection by opening the file, for
+	 example by pressing <Enter>.
+
+Notes:
+1) This file is provided for your convenience. You
+	 could delete it and choose another file to overwrite
+	 that, for example.
+2) If you quit file manager without opening a file, this
+   file will be removed and the save operation aborted.
