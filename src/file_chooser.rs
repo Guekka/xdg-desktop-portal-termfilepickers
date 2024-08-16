@@ -249,16 +249,22 @@ impl FileChooser {
         options: SaveFileOptions,
     ) -> PortalResponse<FileChooserResult> {
         let options = RunnerSaveFileOptions::from(options);
-        let save_file_path = std::path::Path::new(&options.recommended_path);
+        let save_file_path = std::path::PathBuf::from(options.recommended_path.clone());
 
-        if let Err(e) = Self::write_save_file_template(save_file_path) {
-            tracing::error!("Failed to write save file template. Error: {:?}", e);
+        if let Err(e) = Self::write_save_file_template(&save_file_path) {
+            tracing::error!("Failed to write temporary save file. Error: {:?}", e);
             return PortalResponse::Other;
         }
 
-        self.runner
+        let res = self.runner
             .run_save_file(&RunnerSaveFileOptions::from(options))
-            .into()
+            .into();
+
+        if let Err(e) = std::fs::remove_file(save_file_path) {
+            tracing::error!("Failed to remove temporary save file. Error: {:?}", e);
+        }
+
+        res
     }
 
     #[tracing::instrument]
