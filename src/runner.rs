@@ -1,4 +1,4 @@
-use crate::config;
+use crate::config::{self, Config};
 
 use anyhow::{Context, Result};
 use tempfile::NamedTempFile;
@@ -13,74 +13,46 @@ fn temp_path() -> String {
         .to_string()
 }
 
-trait RunnerOptions : serde::Serialize {
-    fn out_file(&self) -> &str;
-}
-
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct RunnerOpenFileOptions {
     pub multiple: bool,
     pub directory: bool,
-    out_file: String,
-}
-
-impl RunnerOpenFileOptions {
-    pub fn new(multiple: bool, directory: bool) -> Self {
-        Self {
-            multiple,
-            directory,
-            out_file: temp_path(),
-        }
-    }
-}
-
-impl RunnerOptions for RunnerOpenFileOptions {
-    fn out_file(&self) -> &str {
-        &self.out_file
-    }
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct RunnerSaveFileOptions {
     pub current_folder: Option<String>,
-    pub out_file: String,
-}
-
-impl RunnerSaveFileOptions {
-    pub fn new(current_folder: Option<String>) -> Self {
-        Self {
-            current_folder,
-            out_file: temp_path(),
-        }
-    }
-}
-
-impl RunnerOptions for RunnerSaveFileOptions {
-    fn out_file(&self) -> &str {
-        &self.out_file
-    }
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct RunnerSaveFilesOptions {
     pub current_folder: Option<String>,
     pub files: Vec<String>,
-    pub out_file: String,
 }
 
-impl RunnerSaveFilesOptions {
-    pub fn new(current_folder: Option<String>, files: Vec<String>) -> Self {
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+#[serde(tag = "type")]
+enum SpecificRunnerArguments {
+    OpenFile(RunnerOpenFileOptions),
+    SaveFile(RunnerSaveFileOptions),
+    SaveFiles(RunnerSaveFilesOptions),
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct RunnerArguments {
+    #[serde(flatten)]
+    specific: SpecificRunnerArguments,
+    out_file: String,
+    termcmd: String,
+}
+
+impl RunnerArguments {
+    fn new(config: &Config, specific: SpecificRunnerArguments) -> Self {
         Self {
-            current_folder,
-            files,
+            specific,
             out_file: temp_path(),
+            termcmd: config.terminal_command.clone(),
         }
-    }
-}
-
-impl RunnerOptions for RunnerSaveFilesOptions {
-    fn out_file(&self) -> &str {
-        &self.out_file
     }
 }
 
@@ -107,8 +79,7 @@ impl ConfigRunner {
     }
 
     fn parse_result(out_file: &str) -> Result<RunnerResult> {
-        let content = std::fs::read_to_string(out_file)
-            .with_context(|| format!("Failed to read output file: {}", out_file))?;
+        let content = std::fs::read_to_string(out_file)?;
 
         // newline separated list of files
         let uris = content
@@ -129,7 +100,7 @@ impl ConfigRunner {
     #[tracing::instrument(skip(options))]
     fn run_script(
         script_path: &std::path::Path,
-        options: &impl RunnerOptions,
+        options: &RunnerArguments,
     ) -> Result<RunnerResult> {
         let out = std::process::Command::new(script_path)
             .arg(serde_json::to_string(options)?)
@@ -139,20 +110,40 @@ impl ConfigRunner {
             anyhow::bail!("Runner failed: {:?}", out);
         }
 
-        Self::parse_result(&options.out_file())
-   }
+        Self::parse_result(&options.out_file)
+            .with_context(|| {
+                format!(
+                    "Script did not produce a valid output file: {}.\n
+                     Script standard output was: {:?}",
+                    options.out_file,
+                    out
+                )
+            })
+    }
 }
 
 impl Runner for ConfigRunner {
     fn run_open_file(&self, options: &RunnerOpenFileOptions) -> Result<RunnerResult> {
-        Self::run_script(&self.config.open_file_script_path, options)
+        let args = RunnerArguments::new(
+            &self.config,
+            SpecificRunnerArguments::OpenFile(options.clone()),
+        );
+        Self::run_script(&self.config.open_file_script_path, &args)
     }
 
     fn run_save_file(&self, options: &RunnerSaveFileOptions) -> Result<RunnerResult> {
-        Self::run_script(&self.config.save_file_script_path, options)
+        let args = RunnerArguments::new(
+            &self.config,
+            SpecificRunnerArguments::SaveFile(options.clone()),
+        );
+        Self::run_script(&self.config.save_file_script_path, &args)
     }
 
     fn run_save_files(&self, options: &RunnerSaveFilesOptions) -> Result<RunnerResult> {
-        Self::run_script(&self.config.save_files_script_path, options)
+        let args = RunnerArguments::new(
+            &self.config,
+            SpecificRunnerArguments::SaveFiles(options.clone()),
+        );
+        Self::run_script(&self.config.save_files_script_path, &args)
     }
 }

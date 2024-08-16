@@ -34,14 +34,6 @@ impl Config {
         Self::is_valid_script(&self.save_file_script_path)?;
         Self::is_valid_script(&self.save_files_script_path)?;
 
-        std::process::Command::new(&self.terminal_command)
-            .arg("exit")
-            .output()
-            .map_err(|err| {
-                log::error!("Failed to run terminal command: {:?}", err);
-                err
-            })?;
-
         Ok(self)
     }
 }
