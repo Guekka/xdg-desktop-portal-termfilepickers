@@ -256,7 +256,8 @@ impl FileChooser {
             return PortalResponse::Other;
         }
 
-        let res = self.runner
+        let res = self
+            .runner
             .run_save_file(&RunnerSaveFileOptions::from(options))
             .into();
 
