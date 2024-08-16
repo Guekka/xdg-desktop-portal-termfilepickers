@@ -52,8 +52,7 @@
           nativeBuildInputs = nativeBuildInputs;
 
           postInstall = ''
-            mkdir -p $out/share/xdg-desktop-portal/portals
-            cp data/termfilepickers.portal $out/share/xdg-desktop-portal/portals/
+            cp -r data/share $out/share
           '';
         };
 
