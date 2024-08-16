@@ -46,10 +46,14 @@ fn load_config(args: &Args) -> Result<config::Config> {
         if let Some(path) = user_path {
             PathBuf::from(path)
         } else {
-            xdg_dirs.place_config_file("config.toml")?
+            xdg_dirs.find_config_file("config.toml").ok_or(anyhow::anyhow!(
+                "Config file not found. Use --config-path to specify the path"
+            ))?
+        
         }
     };
 
+    tracing::info!("Loading config from {:?}", config_path);
     let content = std::fs::read_to_string(&config_path).context("Failed to read config file")?;
 
     toml::from_str(&content)
