@@ -97,6 +97,7 @@ fn get_recommended_filepath(options: &SaveFileOptions) -> String {
         .current_folder
         .as_ref()
         .map(|folder| String::from_utf8_lossy(folder.as_slice()).into_owned())
+        .map(|folder| folder.trim_matches(char::from(0)).to_owned()) // remove null
         .unwrap_or_else(|| {
             std::env::current_dir()
                 .unwrap()
@@ -203,6 +204,16 @@ impl FileChooser {
     }
 
     fn write_save_file_template(save_file_path: &std::path::Path) -> Result<()> {
+        // make parent dir
+        if let Some(parent_dir) = save_file_path.parent() {
+            std::fs::create_dir_all(parent_dir).with_context(|| {
+                format!(
+                    "Failed to create parent directory of save file template {}",
+                    parent_dir.display()
+                )
+            })?;
+        }
+
         std::fs::write(save_file_path, SAVE_FILE_TEMPLATE).with_context(|| {
             format!(
                 "Failed to write save file template to {}",
@@ -240,8 +251,8 @@ impl FileChooser {
         let options = RunnerSaveFileOptions::from(options);
         let save_file_path = std::path::Path::new(&options.recommended_path);
 
-        if !Self::write_save_file_template(save_file_path).is_ok() {
-            tracing::error!("Failed to write save file template");
+        if let Err(e) = Self::write_save_file_template(save_file_path) {
+            tracing::error!("Failed to write save file template. Error: {:?}", e);
             return PortalResponse::Other;
         }
 
