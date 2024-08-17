@@ -37,7 +37,7 @@
           ];
         };
 
-        buildInputs = with pkgs; [openssl];
+        buildInputs = with pkgs; [openssl nushell];
         nativeBuildInputs = with pkgs; [rustPlatform.bindgenHook pkg-config];
       in {
         # Rust package
