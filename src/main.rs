@@ -46,10 +46,11 @@ fn load_config(args: &Args) -> Result<config::Config> {
         if let Some(path) = user_path {
             PathBuf::from(path)
         } else {
-            xdg_dirs.find_config_file("config.toml").ok_or(anyhow::anyhow!(
-                "Config file not found. Use --config-path to specify the path"
-            ))?
-        
+            xdg_dirs
+                .find_config_file("config.toml")
+                .ok_or(anyhow::anyhow!(
+                    "Config file not found. Use --config-path to specify the path"
+                ))?
         }
     };
 
@@ -67,14 +68,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     setup_tracing()?;
 
     let config = load_config(&Args::parse())?;
-    let runner = Box::new(ConfigRunner::new(config)?);
+    let runner = Box::new(ConfigRunner::new(config));
     let picker = FileChooser::new(runner);
 
     let _conn = connection::Builder::session()?
-        .name("org.freedesktop.impl.portal.desktop.termfilepickers")?
-        .serve_at("/org/freedesktop/portal/desktop", picker)?
+        .name("org.freedesktop.impl.portal.desktop.termfilepickers")
+        .context("Failed to create dbus connection")?
+        .serve_at("/org/freedesktop/portal/desktop", picker)
+        .context("Failed to serve dbus service")?
         .build()
-        .await?;
+        .await
+        .context("Failed to build dbus connection")?;
 
     log::info!("Service started");
 

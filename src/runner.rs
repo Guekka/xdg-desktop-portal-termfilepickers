@@ -74,8 +74,8 @@ pub struct ConfigRunner {
 }
 
 impl ConfigRunner {
-    pub(crate) fn new(config: config::Config) -> Result<Self> {
-        Ok(Self { config })
+    pub(crate) fn new(config: config::Config) -> Self {
+        Self { config }
     }
 
     fn parse_result(out_file: &str) -> Result<RunnerResult> {
