@@ -1,13 +1,11 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }: let
   cfg = config.services.xdg-desktop-portal-termfilepickers;
 
   inherit (lib.types) types;
-  inherit (lib.modules) mkIf;
   inherit (lib.options) mkOption mkEnableOption;
 in {
   options.services.xdg-desktop-portal-termfilepickers = {
@@ -19,7 +17,7 @@ in {
 
     desktopEnvironments = mkOption {
       type = types.listOf types.str;
-      default = ["gnome" "kde" "xfce" "mate" "lxqt" "lxde" "cinnamon" "pantheon" "budgie" "deepin" "enlightenment" "i3" "sway" "bspwm"];
+      default = ["common"];
       description = "Lowercase names of the desktop environments to enable the service for";
     };
 
@@ -49,35 +47,5 @@ in {
         example = lib.literalExpression "lib.getExe pkgs.kitty";
       };
     };
-  };
-
-  config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = config.xdg.portal.enable == true;
-        message = "xdg.portal must be enabled to use xdg-desktop-portal-termfilepickers";
-      }
-    ];
-
-    systemd.user.services.xdg-desktop-portal-termfilepickers = let
-      configFile = (pkgs.formats.toml {}).generate "config.toml" cfg.config;
-    in {
-      after = ["graphical-session.target"];
-      wantedBy = ["graphical-session.target"];
-      serviceConfig = {
-        ExecStart = "${lib.getExe cfg.package} --config-path ${configFile}";
-        Restart = "on-failure";
-      };
-    };
-
-    xdg.portal.extraPortals = [cfg.package];
-
-    xdg.portal.config = let
-      convert = map (env: {
-        name = env;
-        value = {"org.freedesktop.impl.portal.FileChooser" = ["termfilepickers"];};
-      });
-    in
-      builtins.listToAttrs (convert cfg.desktopEnvironments);
   };
 }
