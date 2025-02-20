@@ -51,7 +51,12 @@
   in {
     nixosModules = {
       default = self.nixosModules.xdg-desktop-portal-filepickers;
-      xdg-desktop-portal-filepickers = import ./nix/module.nix;
+      xdg-desktop-portal-filepickers = import ./nix/nixos.nix;
+    };
+
+    homeManagerModules = {
+      default = self.homeManagerModules.xdg-desktop-portal-filepickers;
+      xdg-desktop-portal-filepickers = import ./nix/hm.nix;
     };
 
     # Rust package
