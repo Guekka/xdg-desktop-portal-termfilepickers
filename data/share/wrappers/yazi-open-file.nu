@@ -12,5 +12,11 @@ def main [json: string] {
     $yazi_args | append ["--cwd-file" $out_file]
   }
 
+  if $termcmd ends-with "ghostty" {
+    let yazi_command = (["yazi"] | append $yazi_args | str join " ")
+    run-external $termcmd "-e" $yazi_command
+    return
+  }
+
   run-external $termcmd "yazi" ...$yazi_args
 }
