@@ -13,8 +13,7 @@ def main [json: string] {
   }
 
   if $termcmd ends-with "ghostty" {
-    let yazi_command = (["yazi"] | append $yazi_args | str join " ")
-    run-external $termcmd "-e" $yazi_command
+    run-external $termcmd "-e" "yazi" ...$yazi_args
     return
   }
 
