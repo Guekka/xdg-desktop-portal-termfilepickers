@@ -11,7 +11,7 @@ pub struct Config {
     pub save_file_script_path: PathBuf,
     pub save_files_script_path: PathBuf,
 
-    pub terminal_command: String,
+    pub terminal_command: Vec<String>,
 }
 
 impl Config {

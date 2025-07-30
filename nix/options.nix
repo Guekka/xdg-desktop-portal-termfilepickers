@@ -42,9 +42,10 @@ in {
       };
 
       terminal_command = mkOption {
-        type = types.str;
+        type = types.listOf types.str;
         description = "The terminal command to use for opening files";
-        example = lib.literalExpression "lib.getExe pkgs.kitty";
+        example = lib.literalExpression
+          ''[(lib.getExe pkgs.kitty) "--title" "filepicker"]'';
       };
     };
   };

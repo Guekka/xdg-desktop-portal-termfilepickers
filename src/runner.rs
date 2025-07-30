@@ -43,7 +43,7 @@ struct RunnerArguments {
     #[serde(flatten)]
     specific: SpecificRunnerArguments,
     out_file: String,
-    termcmd: String,
+    termcmd: Vec<String>,
 }
 
 impl RunnerArguments {
