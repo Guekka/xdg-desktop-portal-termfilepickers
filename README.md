@@ -14,7 +14,7 @@ To use it, the NixOS / HM modules are recommended. For example:
     enable = true;
     package = termfilepickers;
     config = {
-      terminal_command = lib.getExe pkgs.kitty;
+      terminal_command = [lib.getExe pkgs.kitty];
     };
   };
 ```
