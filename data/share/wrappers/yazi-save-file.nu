@@ -6,7 +6,7 @@ def main [json: string] {
   let termcmd = $json | get "termcmd"
   let path = $json | get "recommended_path"
 
-  let yazi_args = ["--chooser-file" $"\"($out_file)\"" $"\"($path)\""]
+  let yazi_args = ["--chooser-file" $out_file $path]
 
   run-external ...$termcmd "yazi" ...$yazi_args
 }
