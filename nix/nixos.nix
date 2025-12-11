@@ -42,7 +42,7 @@ in {
       builtins.listToAttrs (convert cfg.desktopEnvironments);
 
     # Ensure DBus service file is available for system-wide DBus
-    environment.pathsToLink = [
+    environment.pathsToLink = lib.mkAfter [
       "/share/dbus-1/services"
     ];
   };
