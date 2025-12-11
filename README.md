@@ -32,6 +32,39 @@ To use it, the NixOS / HM modules are recommended. For example:
   };
 ```
 
+### Terminal Command Configuration
+
+The `terminal_command` must be compatible with how the wrapper scripts call it. The scripts will append the file manager command (e.g., `yazi --chooser-file /tmp/xyz`) to your terminal command.
+
+**Working examples:**
+```nix
+# Kitty (recommended)
+terminal_command = [(lib.getExe pkgs.kitty)];
+
+# Alacritty
+terminal_command = [(lib.getExe pkgs.alacritty) "-e"];
+
+# Wezterm
+terminal_command = [(lib.getExe pkgs.wezterm) "-e"];
+
+# Foot
+terminal_command = [(lib.getExe pkgs.foot) "-e"];
+
+# Ghostty - Note: Ghostty may have different flag syntax
+# Check `ghostty --help` for the correct execute flag
+terminal_command = [(lib.getExe pkgs.ghostty) "-e"];
+```
+
+**Important:** Test your terminal command works by running:
+```bash
+# Replace with your terminal_command
+kitty yazi --chooser-file /tmp/test.txt
+# Or with -e flag:
+alacritty -e yazi --chooser-file /tmp/test.txt
+```
+
+If the terminal doesn't open or yazi doesn't start, your `terminal_command` configuration needs adjustment.
+
 ## Configuration
 
 Ensure you have `xdg.portal.enable = true` in your configuration. The module will automatically:
@@ -77,18 +110,46 @@ You can also test with additional options:
    ```
    **This is the most common issue!** The file manager must be installed separately.
 
-2. **Verify DBus service file is installed:**
+2. **TEST YOUR TERMINAL COMMAND MANUALLY (Critical!):**
+   This is the most important debugging step. Test if your terminal command works with yazi:
+   ```bash
+   # Test your exact terminal command
+   # Replace with your configured terminal_command
+   kitty yazi --chooser-file /tmp/test.txt
+   # OR with -e flag if configured:
+   alacritty -e yazi --chooser-file /tmp/test.txt
+   ```
+   
+   - The terminal should open with yazi running
+   - Select a file and press Enter
+   - Check if /tmp/test.txt was created with the file path
+   
+   **If this doesn't work, your `terminal_command` configuration is incorrect!**
+   
+   Common issues:
+   - Wrong execute flag (some terminals use `-e`, some use `--command`, some need no flag)
+   - Ghostty users: Check `ghostty --help` for correct syntax
+   - Missing yazi in PATH
+
+3. **Check termfilepickers service logs for errors:**
+   ```bash
+   journalctl --user -u xdg-desktop-portal-termfilepickers.service -n 50
+   ```
+   Look for error messages like "Runner failed" or "Script did not produce a valid output file".
+   These indicate the terminal command or file manager failed to execute properly.
+
+4. **Verify DBus service file is installed:**
    ```bash
    ls -l ~/.local/share/dbus-1/services/org.freedesktop.impl.portal.desktop.termfilepickers.service
    ```
    This file must exist for DBus to activate the service. If it's missing, rebuild your configuration.
 
-3. Check that termfilepickers service is running:
+5. Check that termfilepickers service is running:
    ```bash
    systemctl --user status xdg-desktop-portal-termfilepickers.service
    ```
 
-4. Check the xdg-desktop-portal configuration:
+6. Check the xdg-desktop-portal configuration:
    ```bash
    cat ~/.config/xdg-desktop-portal/<your-desktop>-portals.conf
    ```
@@ -98,7 +159,7 @@ You can also test with additional options:
    org.freedesktop.impl.portal.FileChooser=termfilepickers
    ```
 
-5. Check xdg-desktop-portal logs to see which backend is being used:
+7. Check xdg-desktop-portal logs to see which backend is being used:
    ```bash
    # Stop the portal service
    systemctl --user stop xdg-desktop-portal.service
@@ -115,21 +176,13 @@ You can also test with additional options:
    XDP: Using termfilepickers.portal for org.freedesktop.impl.portal.FileChooser
    ```
 
-6. After configuration changes, make sure to restart both services in order:
+8. After configuration changes, make sure to restart both services in order:
    ```bash
    systemctl --user restart xdg-desktop-portal-termfilepickers.service
    systemctl --user restart xdg-desktop-portal.service
    ```
 
-7. **Check termfilepickers service logs for errors:**
-   ```bash
-   journalctl --user -u xdg-desktop-portal-termfilepickers.service -f
-   ```
-   Look for error messages when you try to open a file. Common errors include:
-   - Terminal command failures (wrong terminal arguments)
-   - File manager not found (yazi not installed)
-
-8. **If the service still doesn't work after updating:**
+9. **If the service still doesn't work after updating:**
    - Verify the DBus service file path: `cat ~/.local/share/dbus-1/services/org.freedesktop.impl.portal.desktop.termfilepickers.service`
    - Check that it points to the correct executable
    - Reload DBus: `systemctl --user daemon-reload`
