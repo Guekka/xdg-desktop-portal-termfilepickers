@@ -69,10 +69,16 @@
         RUST_BACKTRACE = "full";
 
         buildInputs = getBuildInputs pkgs;
-        nativeBuildInputs = getNativeBuildInputs pkgs;
+        nativeBuildInputs = getNativeBuildInputs pkgs ++ [pkgs.makeWrapper];
 
         postInstall = ''
           cp -r data/share $out/share
+          
+          # Fix nushell shebang in wrapper scripts to use Nix store path
+          for script in $out/share/wrappers/*.nu; do
+            substituteInPlace "$script" \
+              --replace-fail '#!/usr/bin/env nu' '#!${pkgs.nushell}/bin/nu'
+          done
           
           # Install DBus service file
           mkdir -p $out/share/dbus-1/services
