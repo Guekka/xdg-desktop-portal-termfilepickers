@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await
         .context("Failed to build dbus connection")?;
 
-    log::info!("Service started");
+    tracing::info!("Service started");
 
     std::future::pending::<()>().await;
 
