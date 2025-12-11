@@ -73,6 +73,11 @@
 
         postInstall = ''
           cp -r data/share $out/share
+          
+          # Install DBus service file
+          mkdir -p $out/share/dbus-1/services
+          sed "s|@LIBEXECDIR@|$out/bin|g" data/org.freedesktop.impl.portal.desktop.termfilepickers.service \
+            > $out/share/dbus-1/services/org.freedesktop.impl.portal.desktop.termfilepickers.service
         '';
 
         meta = with pkgs.lib; {

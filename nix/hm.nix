@@ -20,10 +20,14 @@ in {
       configFile = (pkgs.formats.toml {}).generate "config.toml" cfg.config;
     in {
       Unit = {
+        Description = "Portal service (termfilepickers implementation)";
+        PartOf = ["graphical-session.target"];
         After = ["graphical-session.target"];
       };
 
       Service = {
+        Type = "dbus";
+        BusName = "org.freedesktop.impl.portal.desktop.termfilepickers";
         ExecStart = "${lib.getExe cfg.package} --config-path ${configFile}";
         Restart = "on-failure";
       };
