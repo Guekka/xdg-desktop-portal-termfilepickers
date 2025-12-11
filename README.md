@@ -67,6 +67,33 @@ If the terminal doesn't open or yazi doesn't start, your `terminal_command` conf
 
 ## Configuration
 
+### Desktop Environment Detection
+
+The `desktopEnvironments` setting determines which portal configuration files are created. XDP uses `$XDG_CURRENT_DESKTOP` to decide which configuration to load.
+
+**Important:** The desktop environment name must match what XDP detects (case-insensitive in config, but must match the detected value).
+
+Check your current desktop:
+```bash
+echo $XDG_CURRENT_DESKTOP
+```
+
+Common configurations:
+```nix
+# For Hyprland
+desktopEnvironments = ["hyprland"];
+
+# For Sway
+desktopEnvironments = ["sway"];
+
+# For multiple or fallback
+desktopEnvironments = ["hyprland" "common"];
+```
+
+If your desktop environment isn't detected correctly, you may need to add multiple entries or use "common" as a fallback.
+
+### Service Configuration
+
 Ensure you have `xdg.portal.enable = true` in your configuration. The module will automatically:
 - Install the portal backend
 - Configure the desktop portal to use termfilepickers for FileChooser interface
@@ -159,7 +186,7 @@ You can also test with additional options:
    org.freedesktop.impl.portal.FileChooser=termfilepickers
    ```
 
-7. Check xdg-desktop-portal logs to see which backend is being used:
+7. **Check XDP logs to verify termfilepickers is actually being called:**
    ```bash
    # Stop the portal service
    systemctl --user stop xdg-desktop-portal.service
@@ -171,22 +198,53 @@ You can also test with additional options:
    GTK_USE_PORTAL=1 zenity --file-selection
    ```
    
-   Look for lines like:
+   Look for these critical lines in order:
    ```
-   XDP: Using termfilepickers.portal for org.freedesktop.impl.portal.FileChooser
+   XDP: Using termfilepickers.portal for org.freedesktop.impl.portal.FileChooser (config)
+   XDP: Handling OpenFile
    ```
+   
+   **If you see "Using termfilepickers.portal" but NOT "Handling OpenFile":**
+   - XDP recognized termfilepickers but isn't calling it
+   - Check if another portal is intercepting the call
+   - Verify your desktop environment is detected correctly
+   
+   **If you see both lines:**
+   - termfilepickers IS being called
+   - Check termfilepickers logs: `journalctl --user -u xdg-desktop-portal-termfilepickers.service -f`
+   - Look for "Runner failed" or other error messages
 
-8. After configuration changes, make sure to restart both services in order:
+8. **Verify desktop environment detection:**
+   ```bash
+   echo $XDG_CURRENT_DESKTOP
+   ```
+   This should match one of your configured `desktopEnvironments`. If it doesn't match, XDP won't use your portal configuration!
+   
+   Common values: `Hyprland`, `sway`, `GNOME`, `KDE`. Note: case-sensitive!
+   
+   If the value doesn't match, add it to your `desktopEnvironments` list (lowercase).
+
+9. After configuration changes, make sure to restart both services in order:
    ```bash
    systemctl --user restart xdg-desktop-portal-termfilepickers.service
    systemctl --user restart xdg-desktop-portal.service
    ```
 
-9. **If the service still doesn't work after updating:**
-   - Verify the DBus service file path: `cat ~/.local/share/dbus-1/services/org.freedesktop.impl.portal.desktop.termfilepickers.service`
-   - Check that it points to the correct executable
-   - Reload DBus: `systemctl --user daemon-reload`
-   - Restart your user session or reboot to ensure all DBus changes are applied
+10. **If the service still doesn't work after updating:**
+    - Verify the DBus service file path: `cat ~/.local/share/dbus-1/services/org.freedesktop.impl.portal.desktop.termfilepickers.service`
+    - Check that it points to the correct executable
+    - Reload DBus: `systemctl --user daemon-reload`
+    - Restart your user session or reboot to ensure all DBus changes are applied
+
+### Common Root Causes
+
+If you've gone through all troubleshooting steps and it still doesn't work, here are the most common root causes:
+
+1. **Desktop environment mismatch**: `$XDG_CURRENT_DESKTOP` doesn't match your `desktopEnvironments` configuration
+2. **Application doesn't use portals**: Some applications bypass XDP entirely (check application-specific documentation)
+3. **Portal priority conflict**: Another portal is handling FileChooser with higher priority
+4. **XDP not actually calling termfilepickers**: Check for "Handling OpenFile" in XDP verbose logs
+5. **Service errors**: Check termfilepickers logs for "Runner failed" or similar errors
 
 ### Notes
 
