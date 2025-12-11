@@ -31,8 +31,8 @@ Ensure you have `xdg.portal.enable = true` in your configuration. The module wil
 
 After updating your configuration, you must restart both services in this order:
 ```bash
-systemctl --user restart xdg-desktop-portal.service
 systemctl --user restart xdg-desktop-portal-termfilepickers.service
+systemctl --user restart xdg-desktop-portal.service
 ```
 
 **Important:** Make sure to rebuild your Home Manager or NixOS configuration to get the latest changes, including the DBus service file installation.
@@ -93,8 +93,8 @@ You can also test with additional options:
 
 5. After configuration changes, make sure to restart both services in order:
    ```bash
-   systemctl --user restart xdg-desktop-portal.service
    systemctl --user restart xdg-desktop-portal-termfilepickers.service
+   systemctl --user restart xdg-desktop-portal.service
    ```
 
 6. **If the service still doesn't work after updating:**
