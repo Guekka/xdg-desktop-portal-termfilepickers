@@ -40,5 +40,10 @@ in {
       });
     in
       builtins.listToAttrs (convert cfg.desktopEnvironments);
+
+    # Ensure DBus service file is available for system-wide DBus
+    environment.pathsToLink = [
+      "/share/dbus-1/services"
+    ];
   };
 }

@@ -46,5 +46,9 @@ in {
       });
     in
       builtins.listToAttrs (convert cfg.desktopEnvironments);
+
+    # Explicitly link DBus service file to user's DBus services directory
+    xdg.dataFile."dbus-1/services/org.freedesktop.impl.portal.desktop.termfilepickers.service".source =
+      "${cfg.package}/share/dbus-1/services/org.freedesktop.impl.portal.desktop.termfilepickers.service";
   };
 }
