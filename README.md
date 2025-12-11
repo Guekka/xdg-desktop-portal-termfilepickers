@@ -6,19 +6,16 @@ I have been daily-driving it for the past few months to replace [xdg-desktop-por
 
 ## Requirements
 
-**Important:** The default wrapper scripts require [Nushell](https://www.nushell.sh/) to be installed and available in your PATH. 
+The default wrapper scripts require:
+- **[Nushell](https://www.nushell.sh/)** - Automatically included as a runtime dependency in the Nix package
+- **File manager** (default is `yazi`) - Must be installed separately:
+  ```nix
+  environment.systemPackages = [ pkgs.yazi ];  # NixOS
+  # or
+  home.packages = [ pkgs.yazi ];  # Home Manager
+  ```
 
-On NixOS/Home Manager, add nushell to your environment:
-```nix
-environment.systemPackages = [ pkgs.nushell ];  # NixOS
-# or
-home.packages = [ pkgs.nushell ];  # Home Manager
-```
-
-You also need a file manager that the scripts can call (default is `yazi`):
-```nix
-environment.systemPackages = [ pkgs.nushell pkgs.yazi ];
-```
+**Note:** When using the Nix package, nushell is automatically included and doesn't need to be in your PATH. For non-Nix installations, you'll need to install nushell separately.
 
 ## Installation
 
@@ -71,17 +68,18 @@ You can also test with additional options:
 
 1. **Verify required dependencies are installed:**
    ```bash
-   which nu  # Should return the path to nushell
-   which yazi  # Should return the path to yazi (or your file manager)
+   which yazi  # Should return the path to your file manager
    ```
-   If either is missing, install them:
+   If yazi (or your chosen file manager) is missing, install it:
    ```nix
    # NixOS
-   environment.systemPackages = [ pkgs.nushell pkgs.yazi ];
+   environment.systemPackages = [ pkgs.yazi ];
    # Home Manager
-   home.packages = [ pkgs.nushell pkgs.yazi ];
+   home.packages = [ pkgs.yazi ];
    ```
-   **This is the most common issue!** The default wrapper scripts require nushell to run.
+   **This is the most common issue!** The file manager must be installed separately.
+   
+   Note: Nushell is automatically included in the Nix package, so you don't need to install it separately.
 
 2. **Verify DBus service file is installed:**
    ```bash
@@ -132,7 +130,6 @@ You can also test with additional options:
    journalctl --user -u xdg-desktop-portal-termfilepickers.service -f
    ```
    Look for error messages when you try to open a file. Common errors include:
-   - Script execution failures (missing nushell)
    - Terminal command failures (wrong terminal arguments)
    - File manager not found (yazi not installed)
 
