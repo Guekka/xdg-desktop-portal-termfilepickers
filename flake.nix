@@ -76,8 +76,10 @@
           
           # Fix nushell shebang in wrapper scripts to use Nix store path
           for script in $out/share/wrappers/*.nu; do
-            substituteInPlace "$script" \
-              --replace-fail '#!/usr/bin/env nu' '#!${pkgs.nushell}/bin/nu'
+            if [ -f "$script" ]; then
+              substituteInPlace "$script" \
+                --replace-fail '#!/usr/bin/env nu' '#!${pkgs.nushell}/bin/nu'
+            fi
           done
           
           # Install DBus service file

@@ -15,8 +15,6 @@ The default wrapper scripts require:
   home.packages = [ pkgs.yazi ];  # Home Manager
   ```
 
-**Note:** When using the Nix package, nushell is automatically included and doesn't need to be in your PATH. For non-Nix installations, you'll need to install nushell separately.
-
 ## Installation
 
 To use it, the NixOS / HM modules are recommended. For example:
@@ -78,8 +76,6 @@ You can also test with additional options:
    home.packages = [ pkgs.yazi ];
    ```
    **This is the most common issue!** The file manager must be installed separately.
-   
-   Note: Nushell is automatically included in the Nix package, so you don't need to install it separately.
 
 2. **Verify DBus service file is installed:**
    ```bash
