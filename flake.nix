@@ -69,7 +69,7 @@
         RUST_BACKTRACE = "full";
 
         buildInputs = getBuildInputs pkgs;
-        nativeBuildInputs = getNativeBuildInputs pkgs;
+        nativeBuildInputs = getNativeBuildInputs pkgs ++ [pkgs.makeWrapper];
 
         postPatch = ''
           substituteInPlace data/share/wrappers/yazi-open-file.nu \
@@ -80,6 +80,19 @@
 
         postInstall = ''
           cp -r data/share $out/share
+          
+          # Fix nushell shebang in wrapper scripts to use Nix store path
+          for script in $out/share/wrappers/*.nu; do
+            if [ -f "$script" ]; then
+              substituteInPlace "$script" \
+                --replace-fail '#!/usr/bin/env nu' '#!${pkgs.nushell}/bin/nu'
+            fi
+          done
+          
+          # Install DBus service file
+          mkdir -p $out/share/dbus-1/services
+          sed "s|@LIBEXECDIR@|$out/bin|g" data/org.freedesktop.impl.portal.desktop.termfilepickers.service \
+            > $out/share/dbus-1/services/org.freedesktop.impl.portal.desktop.termfilepickers.service
         '';
 
         meta = with pkgs.lib; {

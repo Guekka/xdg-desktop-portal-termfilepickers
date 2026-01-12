@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.freedesktop.impl.portal.desktop.termfilepickers
+Exec=@LIBEXECDIR@/xdg-desktop-portal-termfilepickers
+SystemdService=xdg-desktop-portal-termfilepickers.service
