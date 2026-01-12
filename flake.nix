@@ -37,7 +37,7 @@
         ];
       };
 
-    getBuildInputs = pkgs: with pkgs; [openssl nushell];
+    getBuildInputs = pkgs: with pkgs; [openssl nushell yazi];
     getNativeBuildInputs = pkgs: with pkgs; [rustPlatform.bindgenHook pkg-config];
 
     treefmtEval = pkgs:
@@ -70,6 +70,13 @@
 
         buildInputs = getBuildInputs pkgs;
         nativeBuildInputs = getNativeBuildInputs pkgs;
+
+        postPatch = ''
+          substituteInPlace data/share/wrappers/yazi-open-file.nu \
+            --replace-fail '"yazi"' '"${pkgs.yazi}/bin/yazi"'
+          substituteInPlace data/share/wrappers/yazi-save-file.nu \
+            --replace-fail '"yazi"' '"${pkgs.yazi}/bin/yazi"'
+        '';
 
         postInstall = ''
           cp -r data/share $out/share
