@@ -60,35 +60,47 @@
     };
 
     # Rust package
-    packages = pkgsForAllSystems (pkgs: {
-      default = pkgs.rustPlatform.buildRustPackage {
-        inherit (cargoToml.package) name version;
-        src = ./.;
-        cargoLock.lockFile = ./Cargo.lock;
+    packages = pkgsForAllSystems (pkgs: let
+      makePackage = {
+        customYazi ? null,
+        replaceYazi ? true,
+      }: let
+        yaziPath = if customYazi != null then customYazi else pkgs.yazi;
+      in
+        pkgs.rustPlatform.buildRustPackage {
+          inherit (cargoToml.package) name version;
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
 
-        RUST_BACKTRACE = "full";
+          RUST_BACKTRACE = "full";
 
-        buildInputs = getBuildInputs pkgs;
-        nativeBuildInputs = getNativeBuildInputs pkgs;
+          buildInputs = getBuildInputs pkgs;
+          nativeBuildInputs = getNativeBuildInputs pkgs;
 
-        postPatch = ''
-          substituteInPlace data/share/wrappers/yazi-open-file.nu \
-            --replace-fail '"yazi"' '"${pkgs.yazi}/bin/yazi"'
-          substituteInPlace data/share/wrappers/yazi-save-file.nu \
-            --replace-fail '"yazi"' '"${pkgs.yazi}/bin/yazi"'
-        '';
+          postPatch = pkgs.lib.optionalString replaceYazi ''
+            substituteInPlace data/share/wrappers/yazi-open-file.nu \
+              --replace-fail '"yazi"' '"${yaziPath}/bin/yazi"'
+            substituteInPlace data/share/wrappers/yazi-save-file.nu \
+              --replace-fail '"yazi"' '"${yaziPath}/bin/yazi"'
+          '';
 
-        postInstall = ''
-          cp -r data/share $out/share
-        '';
+          postInstall = ''
+            cp -r data/share $out/share
+          '';
 
-        meta = with pkgs.lib; {
-          description = "A FileChooser XDG desktop portal allowing to run custom scripts to open and save files";
-          mainProgram = "xdg-desktop-portal-termfilepickers";
-          license = licenses.mpl20;
-          platforms = platforms.all;
+          meta = with pkgs.lib; {
+            description = "A FileChooser XDG desktop portal allowing to run custom scripts to open and save files";
+            mainProgram = "xdg-desktop-portal-termfilepickers";
+            license = licenses.mpl20;
+            platforms = platforms.all;
+          };
+
+          passthru = {
+            override = args: makePackage args;
+          };
         };
-      };
+    in {
+      default = makePackage {};
     });
 
     # Rust dev environment
