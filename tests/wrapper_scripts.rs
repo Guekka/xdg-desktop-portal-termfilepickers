@@ -1,7 +1,10 @@
 use std::process::Command;
 
 fn has_nushell() -> bool {
-    Command::new("nu").arg("--version").output().is_ok()
+    Command::new("nu")
+        .arg("--version")
+        .status()
+        .is_ok_and(|status| status.success())
 }
 
 #[test]
@@ -14,8 +17,9 @@ fn yazi_open_file_wrapper_accepts_json_arguments() {
         "{}/data/share/wrappers/yazi-open-file.nu",
         env!("CARGO_MANIFEST_DIR")
     );
+    let temp = std::env::temp_dir();
     let payload = serde_json::json!({
-        "out_file": "/tmp/out-file",
+        "out_file": temp.join("out-file"),
         "termcmd": ["true"],
         "directory": false
     })
@@ -40,10 +44,11 @@ fn yazi_save_file_wrapper_accepts_json_arguments() {
         "{}/data/share/wrappers/yazi-save-file.nu",
         env!("CARGO_MANIFEST_DIR")
     );
+    let temp = std::env::temp_dir();
     let payload = serde_json::json!({
-        "out_file": "/tmp/out-file",
+        "out_file": temp.join("out-file"),
         "termcmd": ["true"],
-        "recommended_path": "/tmp/target-file"
+        "recommended_path": temp.join("target-file")
     })
     .to_string();
 
