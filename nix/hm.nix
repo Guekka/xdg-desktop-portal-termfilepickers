@@ -22,6 +22,8 @@ in {
       Unit = {
         After = [cfg.systemdTarget];
         PartOf = [cfg.systemdTarget];
+      } // lib.optionalAttrs (!config.xsession.enable) {
+        ConditionEnvironment = "WAYLAND_DISPLAY";
       };
 
       Service = {
