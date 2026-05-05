@@ -20,7 +20,8 @@ in {
       configFile = (pkgs.formats.toml {}).generate "config.toml" cfg.config;
     in {
       Unit = {
-        After = ["graphical-session.target"];
+        After = [cfg.systemdTarget];
+        PartOf = [cfg.systemdTarget];
       };
 
       Service = {
@@ -29,7 +30,7 @@ in {
       };
 
       Install = {
-        WantedBy = ["graphical-session.target"];
+        WantedBy = [cfg.systemdTarget];
       };
     };
 
