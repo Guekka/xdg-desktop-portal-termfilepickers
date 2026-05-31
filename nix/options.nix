@@ -15,6 +15,12 @@ in {
       description = "The xdg-desktop-portal-termfilepickers package";
     };
 
+    systemdTarget = mkOption {
+      type = types.str;
+      description = "The target that should want the service";
+      default = config.wayland.systemd.target;
+    };
+
     desktopEnvironments = mkOption {
       type = types.listOf types.str;
       default = ["common"];
