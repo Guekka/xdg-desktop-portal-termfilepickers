@@ -16,7 +16,7 @@ pub struct Config {
 
 impl Config {
     /// Check if a script is valid by checking if it is a file that is executable.
-    fn is_valid_script(script_path: &Path) -> Result<()> {
+    pub fn is_valid_script(script_path: &Path) -> Result<()> {
         if !script_path.is_file() {
             bail!("Not a file: {:?}", script_path);
         }
@@ -27,6 +27,15 @@ impl Config {
             }
         }
         Ok(())
+    }
+
+    /// The scripts referenced by this config, paired with the option that declares them.
+    pub fn scripts(&self) -> [(&'static str, &Path); 3] {
+        [
+            ("open_file_script_path", &self.open_file_script_path),
+            ("save_file_script_path", &self.save_file_script_path),
+            ("save_files_script_path", &self.save_files_script_path),
+        ]
     }
 
     pub fn validate(self) -> Result<Self> {

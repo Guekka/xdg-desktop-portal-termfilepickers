@@ -1,4 +1,5 @@
 mod config;
+mod doctor;
 mod file_chooser;
 mod runner;
 
@@ -34,28 +35,47 @@ pub(crate) fn setup_tracing() -> Result<()> {
 }
 
 #[derive(Debug, clap::Parser)]
+#[command(
+    version,
+    about = "A FileChooser XDG desktop portal backed by terminal file managers"
+)]
 struct Args {
-    #[arg(short, long)]
+    #[arg(short, long, global = true)]
     config_path: Option<String>,
+
+    #[command(subcommand)]
+    command: Option<Command>,
 }
 
-fn load_config(args: &Args) -> Result<config::Config> {
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("termfilepickers")?;
-    let config_path = {
-        let user_path = args.config_path.as_deref();
-        if let Some(path) = user_path {
-            PathBuf::from(path)
-        } else {
-            xdg_dirs
-                .find_config_file("config.toml")
-                .ok_or(anyhow::anyhow!(
-                    "Config file not found. Use --config-path to specify the path"
-                ))?
-        }
-    };
+#[derive(Debug, clap::Subcommand)]
+enum Command {
+    /// Serve the portal. This is the default when no subcommand is given.
+    Serve,
+    /// Check that the portal is correctly set up.
+    Doctor {
+        /// Also run the configured open-file script, which opens a real picker.
+        #[arg(long)]
+        run_scripts: bool,
+    },
+}
 
+/// Locate the config file, without reading it.
+fn find_config_path(args: &Args) -> Result<PathBuf> {
+    if let Some(path) = args.config_path.as_deref() {
+        return Ok(PathBuf::from(path));
+    }
+
+    let xdg_dirs = xdg::BaseDirectories::with_prefix("termfilepickers")?;
+    xdg_dirs
+        .find_config_file("config.toml")
+        .ok_or(anyhow::anyhow!(
+            "Config file not found. Use --config-path to specify the path"
+        ))
+}
+
+fn load_config_at(config_path: &std::path::Path) -> Result<config::Config> {
     tracing::info!("Loading config from {:?}", config_path);
-    let content = std::fs::read_to_string(&config_path).context("Failed to read config file")?;
+    let content = std::fs::read_to_string(config_path).context("Failed to read config file")?;
 
     toml::from_str(&content)
         .context("Failed to parse config file")
@@ -63,11 +83,49 @@ fn load_config(args: &Args) -> Result<config::Config> {
         .context("Failed to validate config")
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+fn load_config(args: &Args) -> Result<config::Config> {
+    load_config_at(&find_config_path(args)?)
+}
+
+/// `doctor` reports problems instead of failing on them, so it tolerates both a
+/// missing and an invalid config.
+fn run_doctor(args: &Args, run_scripts: bool) -> i32 {
+    let config_path = find_config_path(args);
+
+    let (path, error) = match &config_path {
+        Ok(path) => (Some(path.as_path()), None),
+        Err(err) => (None, Some(err)),
+    };
+
+    let (report, status) = doctor::run(doctor::DoctorOptions {
+        config_path: path,
+        config_error: error,
+        run_scripts,
+    });
+
+    print!("{report}");
+
+    doctor::exit_code(status)
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
     setup_tracing()?;
 
-    let config = load_config(&Args::parse())?;
+    let args = Args::parse();
+
+    // doctor uses the blocking zbus API, so it must stay outside the async runtime
+    if let Some(Command::Doctor { run_scripts }) = &args.command {
+        std::process::exit(run_doctor(&args, *run_scripts));
+    }
+
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?
+        .block_on(serve(&args))
+}
+
+async fn serve(args: &Args) -> Result<(), Box<dyn Error>> {
+    let config = load_config(args)?;
     let runner = Box::new(ConfigRunner::new(config));
     let picker = FileChooser::new(runner);
 
