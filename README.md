@@ -21,6 +21,28 @@ To use it, the NixOS / HM modules are recommended. For example:
   };
 ```
 
+## Using it outside NixOS
+
+The Home Manager module works on a distribution whose `xdg-desktop-portal` was not
+built by Nix, with no extra configuration. Two things are handled for you.
+
+`forcePortalDir` (default `true`) builds a directory holding every portal backend
+plus the generated `portals.conf`, and points the portal at it with
+`XDG_DESKTOP_PORTAL_DIR`. This is needed because Home Manager normally advertises its
+backends through `NIX_XDG_DESKTOP_PORTAL_DIR`, which only a nixpkgs-patched
+`xdg-desktop-portal` reads. A distribution build ignores it and finds nothing, so the
+backend is installed yet invisible. Note that `XDG_DESKTOP_PORTAL_DIR` *replaces* the
+lookup rather than adding to it, for backends and for `portals.conf` alike, which is
+why everything has to be gathered into one directory. If a backend installed outside
+Nix goes missing as a result, add its package to `extraPortals`.
+
+`setGtkEnvironment` (default `true`) sets `GTK_USE_PORTAL=1` and `GDK_DEBUG=portals`,
+without which GTK applications never call the portal at all. It applies to every GTK
+application in the session, so turn it off if that is too broad.
+
+Neither option does anything on NixOS, where the packaged `xdg-desktop-portal` and
+the `xdg.portal` module already handle this.
+
 ## Configuration Options
 
 ### Custom Yazi Binary

@@ -38,3 +38,7 @@ in {
       builtins.listToAttrs (convert cfg.desktopEnvironments);
   };
 }
+# On NixOS the packaged xdg-desktop-portal reads NIX_XDG_DESKTOP_PORTAL_DIR and
+# xdg.portal already assembles the backend directory, so forcePortalDir is not
+# needed here and is deliberately ignored.
+
