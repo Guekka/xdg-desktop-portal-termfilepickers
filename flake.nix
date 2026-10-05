@@ -65,7 +65,10 @@
         customYazi ? null,
         replaceYazi ? true,
       }: let
-        yaziPath = if customYazi != null then customYazi else pkgs.yazi;
+        yaziPath =
+          if customYazi != null
+          then customYazi
+          else pkgs.yazi;
       in
         pkgs.rustPlatform.buildRustPackage {
           inherit (cargoToml.package) name version;

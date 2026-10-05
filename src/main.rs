@@ -9,7 +9,7 @@ use clap::Parser;
 use file_chooser::FileChooser;
 use runner::ConfigRunner;
 use tracing::level_filters::LevelFilter;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Registry};
+use tracing_subscriber::{EnvFilter, Registry, layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_tree::HierarchicalLayer;
 use zbus::connection;
 
