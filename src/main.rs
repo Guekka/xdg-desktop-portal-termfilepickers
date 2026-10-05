@@ -34,6 +34,7 @@ pub(crate) fn setup_tracing() -> Result<()> {
 }
 
 #[derive(Debug, clap::Parser)]
+#[command(version)]
 struct Args {
     #[arg(short, long)]
     config_path: Option<String>,

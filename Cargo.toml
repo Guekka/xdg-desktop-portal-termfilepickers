@@ -1,6 +1,6 @@
 [package]
 name = "xdg-desktop-portal-termfilepickers"
-version = "0.1.0"
+version = "1.0.1"
 edition = "2021"
 
 [dependencies]
