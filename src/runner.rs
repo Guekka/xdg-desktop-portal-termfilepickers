@@ -110,6 +110,12 @@ impl ConfigRunner {
             anyhow::bail!("Runner failed: {:?}", out);
         }
 
+        // A script that succeeds without writing the file means the user quit the
+        // picker without choosing: no selection, but not an error either.
+        if !std::path::Path::new(&options.out_file).exists() {
+            return Ok(RunnerResult { uris: Vec::new() });
+        }
+
         Self::parse_result(&options.out_file).with_context(|| {
             format!(
                 "Script did not produce a valid output file: {}.\n
